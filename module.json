@@ -27,6 +27,6 @@
     "templates/drawing-sheet.html"
   ],
   "url": "https://github.com/Speaker4TheUndead/investigation-board",
-  "manifest": " https://raw.githubusercontent.com/Speaker4TheUndead/investigation-board/main/module.json",
-  "download": " https://raw.githubusercontent.com/mordachai/investigation-board/main/investigation-board.zip"
+  "manifest": "https://raw.githubusercontent.com/Speaker4TheUndead/investigation-board/main/module.json",
+  "download": "https://raw.githubusercontent.com/mordachai/investigation-board/main/investigation-board.zip"
 }
