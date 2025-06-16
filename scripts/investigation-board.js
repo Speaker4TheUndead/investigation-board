@@ -1,7 +1,6 @@
 //investigation-boards.js
 
 import { registerSettings } from "./settings.js";
-
 const MODULE_ID = "investigation-board";
 const BASE_FONT_SIZE = 15;
 const PIN_COLORS = ["redPin.webp", "bluePin.webp", "yellowPin.webp", "greenPin.webp"];
@@ -26,7 +25,7 @@ function getDynamicCharacterLimits(noteType, currentFontSize) {
 }
 
 
-class CustomDrawingSheet extends DrawingConfig {
+class CustomDrawingSheet extends foundry.applications.sheets.DrawingConfig {
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
       classes: ["custom-drawing-sheet"],
@@ -94,7 +93,7 @@ class CustomDrawingSheet extends DrawingConfig {
 
 }
 
-class CustomDrawing extends Drawing {
+class CustomDrawing extends foundry.canvas.placeables.Drawing {
   constructor(...args) {
     super(...args);
     this.bgSprite = null;
@@ -115,14 +114,18 @@ class CustomDrawing extends Drawing {
   // Ensure sprites update correctly on refresh.
   async refresh() {
     await super.refresh();
-    await this._updateSprites();
     return this;
   }
 
   async _updateSprites() {
     const noteData = this.document.flags[MODULE_ID];
-    if (!noteData) return;
+    if (!noteData || !noteData.type) {
+      console.warn("Missing or invalid note data for drawing", this);
+      return;
+    }
     
+    console.log("Note type:", noteData.type, "Mode:", game.settings.get(MODULE_ID, "boardMode"));
+
     const isPhoto = noteData.type === "photo";
     const isIndex = noteData.type === "index";
     const mode = game.settings.get(MODULE_ID, "boardMode");
@@ -423,7 +426,7 @@ async function createNote(noteType) {
       shape: { width, height },
       fillColor: "#ffffff",
       fillAlpha: 1,
-      strokeColor: "transparent",
+      strokeColor: "#000000",
       strokeAlpha: 0,
       locked: false,
       flags: {
@@ -444,21 +447,18 @@ async function createNote(noteType) {
 
 
 Hooks.on("getSceneControlButtons", (controls) => {
-  const journalControls = controls.find((c) => c.name === "notes");
-  if (!journalControls) return;
+  const tools = controls.notes.tools;
 
-  journalControls.tools.push(
-    { name: "createStickyNote", title: "Create Sticky Note", icon: "fas fa-sticky-note", onClick: () => createNote("sticky"), button: true },
-    { name: "createPhotoNote", title: "Create Photo Note", icon: "fa-solid fa-camera-polaroid", onClick: () => createNote("photo"), button: true },
-    { name: "createIndexCard", title: "Create Index Card", icon: "fa-regular fa-subtitles", onClick: () => createNote("index"), button: true }
-  );
+  tools.createStickyNote = { name: "createStickyNote", order:5, title: "Create Sticky Note", icon: "fas fa-sticky-note", onClick: () => createNote("sticky"), button: true };
+  tools.createPhotoNote =  { name: "createPhotoNote", order:6, title: "Create Photo Note", visible: true, icon: "fa-solid fa-camera-polaroid", onClick: () => createNote("photo"), button: true },
+  tools.createIndexCard =  { name: "createIndexCard", order:7, title: "Create Index Card", icon: "fa-regular fa-subtitles", onClick: () => createNote("index"), button: true }
 });
 
 Hooks.once("init", () => {
   registerSettings();
   CONFIG.Drawing.objectClass = CustomDrawing;
 
-  DocumentSheetConfig.registerSheet(DrawingDocument, "investigation-board", CustomDrawingSheet, {
+  foundry.applications.apps.DocumentSheetConfig.registerSheet(DrawingDocument, "investigation-board", CustomDrawingSheet, {
     label: "Note Drawing Sheet",
     types: ["base"],
     makeDefault: false,
